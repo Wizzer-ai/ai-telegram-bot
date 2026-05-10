@@ -591,6 +591,16 @@ def get_main_keyboard(user_id: int):
     ])
 
 
+def get_quick_reply_keyboard(user_id: int):
+    """Маленькое меню после каждого ответа"""
+    model_key = get_user_model(user_id)
+    model_name = FREE_MODELS.get(model_key, {}).get("name", "❓").split()[1] if " " in FREE_MODELS.get(model_key, {}).get("name", "❓") else FREE_MODELS.get(model_key, {}).get("name", "❓")
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=f"🔄 {model_name}", callback_data="action_select_model"),
+         InlineKeyboardButton(text="🗑️ Новая тема", callback_data="action_new_topic")],
+    ])
+
+
 def get_back_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🔙  Назад", callback_data="action_main_menu")]
@@ -617,6 +627,8 @@ def get_admin_keyboard():
         [InlineKeyboardButton(text="👥 Пользователи", callback_data="admin_users")],
         [InlineKeyboardButton(text="🧠 Использование моделей", callback_data="admin_models")],
         [InlineKeyboardButton(text="📁 Типы файлов", callback_data="admin_files")],
+        [InlineKeyboardButton(text="⚙️ Настройки бота", callback_data="admin_settings")],
+        [InlineKeyboardButton(text="📢 Рассылка", callback_data="admin_broadcast")],
         [InlineKeyboardButton(text="🔄 Перезапустить бота", callback_data="admin_restart")],
         [InlineKeyboardButton(text="🔙 Назад", callback_data="action_main_menu")],
     ])
@@ -701,6 +713,21 @@ async def cmd_clear(message: Message):
     await message.answer(
         "🗑 <b>Контекст диалога очищен!</b>\nНачнём с чистого листа 🌱",
         reply_markup=get_main_keyboard(message.from_user.id)
+    )
+
+
+@router.message(Command("model"))
+async def cmd_model(message: Message):
+    text = "🧠 <b>Выбор модели AI</b>\n\nВыберите модель:"
+    await message.answer(text, reply_markup=get_model_keyboard())
+
+
+@router.message(Command("new"))
+async def cmd_new(message: Message):
+    ai_engine.clear_context(message.from_user.id)
+    await message.answer(
+        "🔄 <b>Новая тема!</b>\nКонтекст очищен. Начнём с чистого листа.\n\nНапишите ваш вопрос!",
+        reply_markup=get_quick_reply_keyboard(message.from_user.id)
     )
 
 
@@ -1184,6 +1211,16 @@ async def main():
     global bot
     
     dp.include_router(router)
+
+    # Регистрация команд бота
+    from aiogram.types import BotCommand
+    await bot.set_my_commands([
+        BotCommand(command="start", description="Главное меню"),
+        BotCommand(command="help", description="Помощь"),
+        BotCommand(command="model", description="Сменить модель"),
+        BotCommand(command="new", description="Новая тема"),
+        BotCommand(command="clear", description="Очистить историю"),
+    ])
 
     logger.info("=" * 50)
     logger.info("🤖 Telegram AI-Bot запускается...")
