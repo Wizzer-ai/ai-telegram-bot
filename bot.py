@@ -660,7 +660,7 @@ async def cmd_start(message: Message):
         f"━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"🤗 <b>Привет, {message.from_user.full_name}!</b>\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"Я — <b>AI-ассистент</b> с продвинутыми возможностями\n\n"
+        f"Я — <b>AI-ассистент</b>, созданный <b>ryph.py</b> ✨\n\n"
         f"┌─────────────────────────┐\n"
         f"│ 🤖  AI-чат              │\n"
         f"│ 🖼  Распознавание фото  │\n"
@@ -783,7 +783,7 @@ async def handle_text(message: Message):
 
     try:
         response = await ai_engine.send_message(user_id=user_id, user_message=text)
-        await message.answer(response)
+        await message.answer(response, reply_markup=get_quick_reply_keyboard(user_id))
     except Exception as e:
         logger.error(f"Text handler error: {e}")
         await message.answer("❌ Произошла ошибка. Попробуйте позже.")
@@ -807,7 +807,7 @@ async def handle_search(message: Message, query: str):
             user_message=f"Ответь на вопрос на основе источников: {query}",
             web_results=results
         )
-        await message.answer(response)
+        await message.answer(response, reply_markup=get_quick_reply_keyboard(user_id))
         update_stats("command", "search")
     except Exception as e:
         logger.error(f"Search error: {e}")
@@ -833,7 +833,7 @@ async def handle_photo(message: Message):
             user_message="Проанализируй это изображение. Опиши что на нём, расшифруй текст если есть.",
             image_url=file_url
         )
-        await message.answer(response)
+        await message.answer(response, reply_markup=get_quick_reply_keyboard(user_id))
         update_stats("command", "photo_analysis")
     except Exception as e:
         logger.error(f"Photo handler error: {e}")
@@ -895,7 +895,7 @@ async def handle_document(message: Message):
             user_message=f"Проанализируй файл: {file_name}",
             file_text=content
         )
-        await message.answer(response)
+        await message.answer(response, reply_markup=get_quick_reply_keyboard(user_id))
 
     except Exception as e:
         logger.error(f"Document handler error: {e}")
