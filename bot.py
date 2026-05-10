@@ -1196,6 +1196,26 @@ async def main():
     await dp.start_polling(bot)
 
 
+# =============================================================
+# HEALTH CHECK (чтобы бот не засыпал на Render)
+# =============================================================
+async def health_check_server():
+    from aiohttp import web
+    
+    async def health(request):
+        return web.Response(text="OK", status=200)
+    
+    app = web.Application()
+    app.router.add_get("/", health)
+    app.router.add_get("/health", health)
+    
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", 8000)
+    await site.start()
+    logger.info("🌐 Health check server started on port 8000")
+
+
 if __name__ == "__main__":
     print("=" * 50)
     print("🤖 Telegram AI-бот v3 (исправленная)")
@@ -1213,7 +1233,13 @@ if __name__ == "__main__":
         print("⚠️  ВНИМАНИЕ: ADMIN_ID не указан! Админ-панель будет недоступна.")
         print("   Укажите ADMIN_ID в .env файле (ваш Telegram ID).")
 
-    # Инициализация бота ПОСЛЕ проверки переменных окружения
+    # Запускаем бота и health check вместе
     bot = Bot(token=TELEGRAM_TOKEN)
 
-    asyncio.run(main())
+    async def run_all():
+        await asyncio.gather(
+            main(),
+            health_check_server()
+        )
+
+    asyncio.run(run_all())
