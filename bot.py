@@ -19,6 +19,7 @@ import os
 import sys
 import tempfile
 import json
+import time
 from datetime import datetime, timezone
 from collections import defaultdict
 from typing import Optional
@@ -1254,6 +1255,30 @@ async def health_check_server():
     logger.info("🌐 Health check server started on port 8000")
 
 
+KEEP_ALIVE_INTERVAL = 300
+
+
+async def keep_alive_pinger():
+    last_ping = 0
+    while True:
+        try:
+            current_time = time.time()
+            if current_time - last_ping >= KEEP_ALIVE_INTERVAL:
+                if ADMIN_ID != 0:
+                    msg = await bot.send_message(ADMIN_ID, "🔄 Бот активен")
+                    await asyncio.sleep(50)
+                    try:
+                        await msg.delete()
+                    except Exception:
+                        pass
+                    last_ping = current_time
+                else:
+                    last_ping = current_time
+        except Exception as e:
+            logger.warning(f"Keep-alive error: {e}")
+        await asyncio.sleep(10)
+
+
 if __name__ == "__main__":
     print("=" * 50)
     print("🤖 Telegram AI-бот v3 (исправленная)")
@@ -1277,7 +1302,8 @@ if __name__ == "__main__":
     async def run_all():
         await asyncio.gather(
             main(bot),
-            health_check_server()
+            health_check_server(),
+            keep_alive_pinger()
         )
 
     asyncio.run(run_all())
