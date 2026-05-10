@@ -32,8 +32,9 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-ADMIN_IDS = [int(os.getenv("ADMIN_ID", "0")), 7308065271]
-ADMIN_ID = ADMIN_IDS[0]
+admin_ids_str = os.getenv("ADMIN_ID", "0")
+ADMIN_IDS = [int(x.strip()) for x in admin_ids_str.split(",") if x.strip()]
+ADMIN_ID = ADMIN_IDS[0] if ADMIN_IDS else 0
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
