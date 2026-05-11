@@ -41,6 +41,93 @@ from aiogram.types import (
 from aiogram.exceptions import TelegramBadRequest
 
 # =============================================================
+# 🌐 ЯЗЫКИ
+# =============================================================
+LANGUAGES = {
+    "ru": "Русский 🇷🇺",
+    "uz": "O'zbek 🇺🇿",
+    "en": "English 🇬🇧"
+}
+
+TRANSLATIONS = {
+    "ru": {
+        "welcome": "Привет, {name}!\nЯ — AI-ассистент.\nВыбери язык:",
+        "menu_ai_chat": "💬 AI-чат",
+        "menu_photo": "🖼 Анализ фото",
+        "menu_file": "📄 Чтение файлов",
+        "menu_search": "🔍 Поиск",
+        "menu_facts": "✅ Фактчек",
+        "menu_settings": "⚙️ Настройки",
+        "menu_help": "ℹ️ Помощь",
+        "menu_admin": "🔴 Админ",
+        "menu_language": "🌐 Язык",
+        "menu_payment": "💰 Пополнить",
+        "model_select": "Выбери модель:",
+        "help_text": "Команды:\n/start — Меню\n/help — Помощь\n/clear — Очистить\n/model — Модель\n/settings — Настройки",
+        "payment_title": "💰 Пополнение баланса",
+        "payment_crypto": "CryptoBot ($2/неделя)",
+        "payment_card": "Карта Узбекистан (20 000 сум/неделя)",
+        "payment_success": "✅ Оплата подтверждена!",
+        "payment_wait": "⏳ Ожидаю оплату...",
+        "trial": "Пробный период",
+        "active": "Активен до: {date}",
+        "expired": "❌ Подписка истекла",
+    },
+    "uz": {
+        "welcome": "Salom, {name}!\nMen — AI-yordamchi.\nTilni tanlang:",
+        "menu_ai_chat": "💬 AI-chat",
+        "menu_photo": "🖼 Foto tahlili",
+        "menu_file": "📄 Fayl o'qish",
+        "menu_search": "🔍 Qidiruv",
+        "menu_facts": "✅ Fakt-check",
+        "menu_settings": "⚙️ Sozlamalar",
+        "menu_help": "ℹ️ Yordam",
+        "menu_admin": "🔴 Admin",
+        "menu_language": "🌐 Til",
+        "menu_payment": "💰 To'ldirish",
+        "model_select": "Modelni tanlang:",
+        "help_text": "Buyruqlar:\n/start — Menu\n/help — Yordam\n/clear — Tozalash\n/model — Model\n/settings — Sozlamalar",
+        "payment_title": "💰 Balansni to'ldirish",
+        "payment_crypto": "CryptoBot ($2/hafta)",
+        "payment_card": "O'zbek karta (20 000 so'm/hafta)",
+        "payment_success": "✅ To'lov tasdiqlandi!",
+        "payment_wait": "⏳ To'lov kutish...",
+        "trial": "Sinov muddati",
+        "active": "Faol to: {date}",
+        "expired": "❌ Obunka tugagan",
+    },
+    "en": {
+        "welcome": "Hello, {name}!\nI'm an AI assistant.\nChoose language:",
+        "menu_ai_chat": "💬 AI Chat",
+        "menu_photo": "🖼 Photo Analysis",
+        "menu_file": "📄 Read Files",
+        "menu_search": "🔍 Search",
+        "menu_facts": "✅ Fact Check",
+        "menu_settings": "⚙️ Settings",
+        "menu_help": "ℹ️ Help",
+        "menu_admin": "🔴 Admin",
+        "menu_language": "🌐 Language",
+        "menu_payment": "💰 Top up",
+        "model_select": "Select model:",
+        "help_text": "Commands:\n/start — Menu\n/help — Help\n/clear — Clear\n/model — Model\n/settings — Settings",
+        "payment_title": "💰 Balance top-up",
+        "payment_crypto": "CryptoBot ($2/week)",
+        "payment_card": "Uzbek Card (20,000 sum/week)",
+        "payment_success": "✅ Payment confirmed!",
+        "payment_wait": "⏳ Waiting for payment...",
+        "trial": "Trial period",
+        "active": "Active until: {date}",
+        "expired": "❌ Subscription expired",
+    }
+}
+
+user_languages: dict[int, str] = {}
+
+def t(user_id: int, key: str) -> str:
+    lang = user_languages.get(user_id, "ru")
+    return TRANSLATIONS.get(lang, TRANSLATIONS["ru"]).get(key, key)
+
+# =============================================================
 # 🔧 НАСТРОЙКИ (через переменные окружения)
 # =============================================================
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
@@ -578,17 +665,39 @@ file_reader = FileReader()
 # КЛАВИАТУРЫ
 # =============================================================
 
+def get_language_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🇷🇺 Русский", callback_data="lang_ru")],
+        [InlineKeyboardButton(text="🇺🇿 O'zbek", callback_data="lang_uz")],
+        [InlineKeyboardButton(text="🇬🇧 English", callback_data="lang_en")],
+    ])
+
+
+def get_payment_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="₿ CryptoBot ($2/неделя)", callback_data="pay_crypto")],
+        [InlineKeyboardButton(text="💳 Карта Узбекистан (20 000 сум)", callback_data="pay_card")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="action_settings")],
+    ])
+
+
 def get_main_keyboard(user_id: int):
+    lang = user_languages.get(user_id, "ru")
     model_key = get_user_model(user_id)
     model_name = FREE_MODELS.get(model_key, {}).get("name", "❓")
+
+    labels = TRANSLATIONS.get(lang, TRANSLATIONS["ru"])
+
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🔍  Поиск в интернете", callback_data="action_search")],
-        [InlineKeyboardButton(text=f"🧠  Модель: {model_name}", callback_data="action_select_model")],
-        [InlineKeyboardButton(text="🔄  Новая тема", callback_data="action_new_topic"),
-         InlineKeyboardButton(text="📊  Статистика", callback_data="action_stats")],
-        [InlineKeyboardButton(text="ℹ️  Помощь", callback_data="action_help"),
-         InlineKeyboardButton(text="⚙️  Настройки", callback_data="action_settings")],
-        [InlineKeyboardButton(text="🔴  Админ-панель", callback_data="action_admin")],
+        [InlineKeyboardButton(text="🔍 " + labels.get("menu_search", "Поиск"), callback_data="action_search")],
+        [InlineKeyboardButton(text=f"🧠 {labels.get('model_select', 'Модель')}: {model_name}", callback_data="action_select_model")],
+        [InlineKeyboardButton(text="🔄 " + labels.get("menu_facts", "Фактчек"), callback_data="action_new_topic"),
+         InlineKeyboardButton(text="📊 Статистика", callback_data="action_stats")],
+        [InlineKeyboardButton(text="🌐 " + labels.get("menu_language", "Язык"), callback_data="action_language"),
+         InlineKeyboardButton(text="💰 " + labels.get("menu_payment", "Пополнить"), callback_data="action_payment")],
+        [InlineKeyboardButton(text="ℹ️ " + labels.get("menu_help", "Помощь"), callback_data="action_help"),
+         InlineKeyboardButton(text="⚙️ " + labels.get("menu_settings", "Настройки"), callback_data="action_settings")],
+        [InlineKeyboardButton(text="🔴 Админ-панель", callback_data="action_admin")],
     ])
 
 
@@ -654,27 +763,30 @@ def admin_only(func):
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    model_key = get_user_model(message.from_user.id)
+    if message.from_user.id not in user_languages:
+        await message.answer(
+            f"🤗 Привет, {message.from_user.full_name}!\n\nВыбери язык / Tilni tanlang / Choose language:",
+            reply_markup=get_language_keyboard()
+        )
+    else:
+        await show_main_menu(message)
+
+
+async def show_main_menu(message: Message):
+    user_id = message.from_user.id
+    lang = user_languages.get(user_id, "ru")
+    labels = TRANSLATIONS.get(lang, TRANSLATIONS["ru"])
+
+    model_key = get_user_model(user_id)
     model_info = FREE_MODELS.get(model_key, FREE_MODELS[DEFAULT_MODEL])
 
     welcome = (
         f"━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🤗 <b>Привет, {message.from_user.full_name}!</b>\n"
+        f"🤗 *{labels.get('welcome', 'Привет').format(name=message.from_user.full_name)}*\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"Я — <b>AI-ассистент</b>, созданный <b>ryph.py</b> ✨\n\n"
-        f"┌─────────────────────────┐\n"
-        f"│ 🤖  AI-чат              │\n"
-        f"│ 🖼  Распознавание фото  │\n"
-        f"│ 📄  Чтение файлов       │\n"
-        f"│ 🔍  Веб-поиск           │\n"
-        f"│ ✅  Проверка фактов     │\n"
-        f"│ 💬  Контекст диалога    │\n"
-        f"└─────────────────────────┘\n\n"
-        f"🧠 <b>Текущая модель:</b> {model_info['name']}\n"
-        f"📝 <b>Описание:</b> {model_info['description']}\n\n"
-        f"Просто напишите или отправьте фото/файл!"
+        f"*{model_info['name']}*\n{model_info['description']}"
     )
-    await message.answer(welcome, reply_markup=get_main_keyboard(message.from_user.id), parse_mode="HTML")
+    await message.answer(welcome, reply_markup=get_main_keyboard(user_id))
     stats["total_users"].add(message.from_user.id)
     update_stats("command", "start")
 
@@ -1032,6 +1144,65 @@ async def cb_settings(callback: CallbackQuery):
     )
     kb = get_back_keyboard()
     await safe_edit(callback, text, reply_markup=kb)
+
+
+@router.callback_query(F.data == "action_language")
+async def cb_language(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "🌐 *Выберите язык / Tilni tanlang / Choose language:*",
+        reply_markup=get_language_keyboard()
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("lang_"))
+async def cb_lang_selected(callback: CallbackQuery):
+    lang = callback.data.replace("lang_", "")
+    user_languages[callback.from_user.id] = lang
+
+    labels = TRANSLATIONS.get(lang, TRANSLATIONS["ru"])
+    await callback.answer(f"✅ Язык: {LANGUAGES.get(lang, lang)}", show_alert=True)
+
+    text = labels.get("welcome", "Готово!").format(name=callback.from_user.full_name)
+    await callback.message.edit_text(text, reply_markup=get_main_keyboard(callback.from_user.id))
+
+
+@router.callback_query(F.data == "action_payment")
+async def cb_payment(callback: CallbackQuery):
+    lang = user_languages.get(callback.from_user.id, "ru")
+    labels = TRANSLATIONS.get(lang, TRANSLATIONS["ru"])
+
+    text = labels.get("payment_title", "💰 Пополнение баланса") + "\n\n"
+    text += labels.get("payment_crypto", "CryptoBot ($2/неделя)") + "\n"
+    text += labels.get("payment_card", "Карта Узбекистан (20 000 сум/неделя)")
+
+    await callback.message.edit_text(text, reply_markup=get_payment_keyboard())
+    await callback.answer()
+
+
+@router.callback_query(F.data == "pay_crypto")
+async def cb_pay_crypto(callback: CallbackQuery):
+    lang = user_languages.get(callback.from_user.id, "ru")
+    labels = TRANSLATIONS.get(lang, TRANSLATIONS["ru"])
+
+    await callback.message.edit_text(
+        f"{labels.get('payment_wait', '⏳ Ожидаю оплату...')}\n\n"
+        "Перейди в @CryptoBot и отправь $2 на:\n"
+        "`YOUR_WALLET_ADDRESS`\n\n"
+        "После оплаты нажми 'Проверить оплату'"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "pay_card")
+async def cb_pay_card(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "💳 *Пополнение карты Узбекистан*\n\n"
+        "Номер карты: `8600 1234 5678 9010`\n"
+        "Сумма: `20 000` сум\n\n"
+        "После оплаты нажми 'Проверить'"
+    )
+    await callback.answer()
 
 
 @router.callback_query(F.data == "action_stats")
