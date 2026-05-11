@@ -704,7 +704,6 @@ def get_main_keyboard(user_id: int):
          InlineKeyboardButton(text="💰 " + labels.get("menu_payment", "Пополнить"), callback_data="action_payment")],
         [InlineKeyboardButton(text="ℹ️ " + labels.get("menu_help", "Помощь"), callback_data="action_help"),
          InlineKeyboardButton(text="⚙️ " + labels.get("menu_settings", "Настройки"), callback_data="action_settings")],
-        [InlineKeyboardButton(text="🔴 Админ-панель", callback_data="action_admin")],
     ])
 
 
@@ -793,11 +792,11 @@ async def show_main_menu(message: Message):
         "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
         "Я — AI-ассистент с продвинутыми возможностями\n\n"
         "┌─────────────────────────┐\n"
-        "│ 🤖 AI-чат               │\n"
-        "│ 🖼 Распознавание фото   │\n"
-        "│ 📄 Чтение файлов        │\n"
-        "│ 🔍 Веб-поиск            │\n"
-        "│ ✅ Проверка фактов      │\n"
+        "│ 🤖 AI-чат              │\n"
+        "│ 🖼 Распознавание фото │\n"
+        "│ 📄 Чтение файлов       │\n"
+        "│ 🔍 Веб-поиск           │\n"
+        "│ ✅ Проверка фактов    │\n"
         "└─────────────────────────┘\n\n"
         f"🧠 Текущая модель: {model_info['name']}\n"
         f"📝 Описание: {model_info['description']}\n\n"
@@ -951,6 +950,17 @@ async def handle_search(message: Message, query: str):
 @router.message(F.photo)
 async def handle_photo(message: Message):
     user_id = message.from_user.id
+
+    model_key = get_user_model(user_id)
+    model_info = FREE_MODELS.get(model_key, FREE_MODELS[DEFAULT_MODEL])
+
+    if not model_info.get("supports_vision", False):
+        await message.answer(
+            "⚠️ Текущая модель не поддерживает анализ изображений.\n"
+            "Выбери модель с поддержкой фото в настройках."
+        )
+        return
+
     await bot.send_chat_action(message.chat.id, "typing")
 
     try:
