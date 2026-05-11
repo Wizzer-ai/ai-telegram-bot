@@ -789,19 +789,20 @@ async def show_main_menu(message: Message):
 
     welcome = (
         "━━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🤗 *Привет, {message.from_user.first_name}!* 🇷🇺\n"
+        f"🤗 Привет, {message.from_user.first_name}!\n"
         "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Я — *AI-ассистент* ✨\n\n"
-        "┌─────────────────────┐\n"
-        "│ 🤖  AI-чат          │\n"
-        "│ 🖼  Распознавание   │\n"
-        "│ 📄  Чтение файлов   │\n"
-        "│ 🔍  Веб-поиск       │\n"
-        "│ ✅  Проверка фактов │\n"
-        "└─────────────────────┘\n\n"
-        f"🧠 *Модель:* {model_info['name']}\n"
-        f"📝 {model_info['description']}\n\n"
-        "Напиши что угодно или отправь фото!"
+        "Я — AI-ассистент с продвинутыми возможностями\n\n"
+        "┌─────────────────────────┐\n"
+        "│ 🤖  AI-чат              │\n"
+        "│ 🖼  Распознавание фото  │\n"
+        "│ 📄  Чтение файлов       │\n"
+        "│ 🔍  Веб-поиск           │\n"
+        "│ ✅  Проверка фактов     │\n"
+        "│ 💬  Контекст диалога    │\n"
+        "└─────────────────────────┘\n\n"
+        f"🧠 Текущая модель: {model_info['name']}\n"
+        f"📝 Описание: {model_info['description']}\n\n"
+        "Просто напишите или отправьте фото/файл!"
     )
     await message.answer(welcome, reply_markup=get_main_keyboard(user_id))
     stats["total_users"].add(message.from_user.id)
