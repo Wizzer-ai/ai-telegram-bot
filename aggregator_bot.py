@@ -32,6 +32,10 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL", "")
+WEBHOOK_PATH = "/webhook"
+PORT = int(os.getenv("PORT", 8000))
+
 admin_ids_str = os.getenv("ADMIN_ID", "0")
 ADMIN_IDS = [int(x.strip()) for x in admin_ids_str.split(",") if x.strip()]
 ADMIN_ID = ADMIN_IDS[0] if ADMIN_IDS else 0
@@ -1095,25 +1099,39 @@ async def main(bot_instance: Bot):
         BotCommand(command="myapi", description="Мои API данные"),
     ])
 
-    async def ping_loop():
-        while True:
-            try:
-                for admin_id in ADMIN_IDS:
-                    msg = await bot.send_message(admin_id, "🏓 Ping")
-                    await bot.delete_message(admin_id, msg.message_id)
-                logger.info("✅ Ping отправлен")
-            except Exception as e:
-                logger.error(f"Ping error: {e}")
-            await asyncio.sleep(600)
-
-    asyncio.create_task(ping_loop())
-
     logger.info("=" * 50)
     logger.info("📡 Aggregator Bot запущен!")
     logger.info("=" * 50)
 
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    if WEBHOOK_URL:
+        await bot.set_webhook(f"{WEBHOOK_URL}{WEBHOOK_PATH}")
+        logger.info(f"🔗 Webhook: {WEBHOOK_URL}{WEBHOOK_PATH}")
+
+        app = aiohttp.web.Application()
+        app["bot"] = bot
+        app.router.add_post(WEBHOOK_PATH, webhook_handler)
+
+        runner = aiohttp.web.AppRunner(app)
+        await runner.setup()
+        site = aiohttp.web.TCPSite(runner, "0.0.0.0", PORT)
+        await site.start()
+        logger.info(f"🌐 Server started on port {PORT}")
+
+        while True:
+            await asyncio.sleep(3600)
+    else:
+        await bot.delete_webhook(drop_pending_updates=True)
+        await dp.start_polling(bot)
+
+
+async def webhook_handler(request):
+    from aiogram.types import Update
+
+    data = await request.json()
+    update = Update(**data)
+
+    await dp.feed_webhook_update(bot, update)
+    return aiohttp.web.Response(text="OK")
 
 
 if __name__ == "__main__":
