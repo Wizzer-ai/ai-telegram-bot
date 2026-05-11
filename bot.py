@@ -1207,6 +1207,13 @@ async def cb_payment(callback: CallbackQuery):
     await callback.answer()
 
 
+def get_payment_check_keyboard(payment_type: str):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Проверить оплату", callback_data=f"check_{payment_type}")],
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="action_payment")],
+    ])
+
+
 @router.callback_query(F.data == "pay_crypto")
 async def cb_pay_crypto(callback: CallbackQuery):
     lang = user_languages.get(callback.from_user.id, "ru")
@@ -1214,10 +1221,10 @@ async def cb_pay_crypto(callback: CallbackQuery):
 
     await callback.message.edit_text(
         f"{labels.get('payment_wait', '⏳ Ожидаю оплату...')}\n\n"
-        "Перейди в @CryptoBot и отправь $2 на:\n"
-        "`YOUR_WALLET_ADDRESS`\n\n"
+        "Перейди в @CryptoBot и отправь $2\n\n"
         "После оплаты нажми 'Проверить оплату'"
     )
+    await callback.message.edit_reply_markup(reply_markup=get_payment_check_keyboard("crypto"))
     await callback.answer()
 
 
@@ -1229,6 +1236,25 @@ async def cb_pay_card(callback: CallbackQuery):
         "Сумма: `20 000` сум\n\n"
         "После оплаты нажми 'Проверить'"
     )
+    await callback.message.edit_reply_markup(reply_markup=get_payment_check_keyboard("card"))
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("check_"))
+async def cb_check_payment(callback: CallbackQuery):
+    payment_type = callback.data.replace("check_", "")
+
+    admin_id = ADMIN_ID
+    await bot.send_message(
+        admin_id,
+        f"⚠️ *Проверка оплаты*\n\n"
+        f"Пользователь: {callback.from_user.first_name}\n"
+        f"ID: `{callback.from_user.id}`\n"
+        f"Тип: {payment_type}\n\n"
+        f"Проверь поступление и подтверди подписку."
+    )
+
+    await callback.message.edit_text("✅ Запрос отправлен админу!\nОжидай подтверждение в течение 5 минут.")
     await callback.answer()
 
 
