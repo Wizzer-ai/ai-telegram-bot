@@ -122,6 +122,13 @@ def get_main_keyboard():
     ])
 
 
+def get_user_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📱 Мой API", callback_data="user_myapi")],
+        [InlineKeyboardButton(text="❓ Как использовать", callback_data="user_help")],
+    ])
+
+
 def get_model_keyboard():
     current = settings.get("ai_model", DEFAULT_MODEL_KEY)
     buttons = []
@@ -496,24 +503,36 @@ async def aggregator_loop():
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    if message.from_user.id not in ADMIN_IDS:
-        await message.answer("🚫 Доступ только для администратора.")
-        return
-
-    text = (
-        "━━━━━━━━━━━━━━━━━━━━━━━\n"
-        "📡 *Content Aggregator Bot*\n"
-        "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Бот для автоматического сбора и редактирования контента.\n\n"
-        "*Функционал:*\n"
-        "• Добавление каналов-источников\n"
-        "• Автоматическая обработка постов\n"
-        "• Пересылка фото/аудио с водяным знаком\n"
-        "• Переписывание текста через ИИ\n"
-        "• Настройка водяного знака для каждого поста\n\n"
-        "*Настройте бота и нажмите Запустить*"
-    )
-    await message.answer(text, reply_markup=get_main_keyboard())
+    if message.from_user.id in ADMIN_IDS:
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "📡 *Content Aggregator Bot*\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Бот для автоматического сбора и редактирования контента.\n\n"
+            "*Функционал:*\n"
+            "• Добавление каналов-источников\n"
+            "• Автоматическая обработка постов\n"
+            "• Пересылка фото/аудио с водяным знаком\n"
+            "• Переписывание текста через ИИ\n"
+            "• Настройка водяного знака для каждого поста\n\n"
+            "*Настройте бота и нажмите Запустить*"
+        )
+        await message.answer(text, reply_markup=get_main_keyboard())
+    else:
+        text = (
+            "━━━━━━━━━━━━━━━━━━━━━━━\n"
+            "📡 *Content Aggregator*\n"
+            "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Отправь свой API для участия:\n"
+            "/myapi api_id api_hash\n\n"
+            "Пример:\n"
+            "/myapi 38398371 dbabfbb...\n\n"
+            "Как получить API:\n"
+            "1. Зайди на my.telegram.org\n"
+            "2. Создай приложение\n"
+            "3. Скопируй api_id и api_hash"
+        )
+        await message.answer(text, reply_markup=get_user_keyboard())
 
 
 def get_admin_keyboard():
@@ -886,21 +905,45 @@ async def cb_start_aggregator(callback: CallbackQuery):
 @router.callback_query(F.data == "action_help")
 async def cb_help(callback: CallbackQuery):
     text = (
-        "ℹ️ <b>Помощь</b>\n\n"
-        "<b>Настройка:</b>\n"
+        "ℹ️ *Помощь*\n\n"
+        "*Настройка:*\n"
         "1. Добавь каналы-источники\n"
         "2. Установи целевой канал\n"
         "3. Настрой стиль (для текста)\n"
         "4. Настрой водяной знак\n"
         "5. Настрой Telethon API\n"
         "6. Нажми 'Запустить'\n\n"
-        "<b>Логика работы:</b>\n"
+        "*Логика работы:*\n"
         "• Фото/Аудио → пересылка с водяным знаком\n"
-        "• Текст → переписывание через ИИ\n\n"
-        "<b>Водяной знак:</b>\n"
-        "• Режим 'Под каждый пост' - будет спрашивать перед каждым постом\n"
-        "• Режим 'Один для всех' - один текст для всех постов"
+        "• Текст → переписывание через ИИ"
     )
+
+
+@router.callback_query(F.data == "user_myapi")
+async def cb_user_myapi(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "📱 *Установка API*\n\n"
+        "Команда: /myapi api_id api_hash\n\n"
+        "Как получить:\n"
+        "1. Зайди на my.telegram.org\n"
+        "2. Создай приложение\n"
+        "3. Скопируй api_id и api_hash\n\n"
+        "После ввода, бот проверит и отправит данные"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "user_help")
+async def cb_user_help(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "❓ *Как использовать*\n\n"
+        "1. Зарегистрируйся на my.telegram.org\n"
+        "2. Создай приложение (App)\n"
+        "3. Скопируй api_id и api_hash\n"
+        "4. Отправь: /myapi ТВОЙ_API_ID ТВОЙ_API_HASH\n\n"
+        "После проверки твой API будет добавлен в систему!"
+    )
+    await callback.answer()
     await callback.message.edit_text(text, reply_markup=get_back_keyboard("main_menu"), parse_mode="HTML")
     await callback.answer()
 
